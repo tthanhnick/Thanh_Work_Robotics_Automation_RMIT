@@ -1,0 +1,76 @@
+MODULE Module1
+    CONST robtarget Start:=[[541.140714835,67.292951727,121.5],[0,0.991444861,0.130526192,0],[-1,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget Target_10:=[[541.140753608,67.292957601,121.500009537],[0,0.991444864,0.130526175,0],[0,-1,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget Pick:=[[201.911,-381.869,-27.717],[0,-0.707106781,0.707106781,0],[-1,-1,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget AbovePick:=[[201.911,-381.869,121.5],[0,-0.707106781,0.707106781,0],[-1,-1,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget AbovePlace:=[[192.526,489.158,121.5],[0,-0.707106781,0.707106781,0],[0,1,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget Place:=[[192.526,489.158,-27.717],[0,-0.707106781,0.707106781,0],[0,1,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    !***********************************************************
+    !
+    ! Module:  Module1
+    !
+    ! Description:
+    !   <Insert description here>
+    !
+    ! Author: tn150
+    !
+    ! Version: 1.0
+    !
+    !***********************************************************
+
+
+    !***********************************************************
+    !
+    ! Procedure main
+    !
+    !   This is the entry point of your program
+    !
+    !***********************************************************
+
+    !Variables and constants
+    CONST num x_increment:=50; !offset 50mm in the x axis
+    CONST num y_increment:=50; !offset 50mm in the y axis
+    CONST num DelayTime := 0.25; !delay time for picking object
+    VAR num x_pos:=0; ! x position
+    VAR num y_pos:=0; ! y position
+    VAR num my_pnp_height:=130; !robot pick height
+    VAR pnpdata my_pnpdata;
+    PROC main()
+        ! Infinite Loop
+        Loop:
+        WorldAccLim\On:=34; !Acceleration limits to 34 m/s^2
+        MoveL AbovePick,v2000,fine,tVacuumGripper\WObj:=wobj0; 
+        FOR y FROM 0 TO 2 DO
+            !loop for collumn
+            !due to the placement of the robot, we have x = row, y = collumn
+            FOR x FROM 0 TO 2 DO
+                !loop for row
+                Path_10;
+                x_pos:=x_pos-x_increment;
+            ENDFOR
+            y_pos:=y_pos-y_increment;
+            x_pos:=0;
+        ENDFOR
+        y_pos:=0;
+        WaitDI Entrance2,1; !Waiting for the sensor 2
+        GOTO Loop;
+    ENDPROC
+
+    PROC Path_10()
+        ! MovePnP 5 Points
+        my_pnpdata.smooth_start:=50;
+        my_pnpdata.smooth_end:=50;
+        ! Clear the variables before Pick and place
+        SetDO Exit1,0;
+        SetDO Exit2,0;
+        WaitDI Entrance1,1; !Waiting for the sensor 1
+
+        MoveLDO Pick,v2000,fine,tVacuumGripper\WObj:=wobj0,Exit1,1; !Pick the box out of the conveyor
+        WaitTime \InPos,DelayTime; ! Wait Time
+        MovePnP Offs(Place,x_pos,y_pos,25),v2000,\PnPHeight:=my_pnp_height,fine,tVacuumGripper\WObj:=wobj0\PnPDataIN:=my_pnpdata \MaxTime:=1;
+        SetDO Exit2,1; ! Place the box in the conveyor
+        WaitTime \InPos,DelayTime; ! Wait Time
+        MoveL offs(AbovePlace,x_pos,y_pos,0),v2000,fine,tVacuumGripper\WObj:=wobj0;
+        MovePnP AbovePick,v2000,\PnPHeight:=my_pnp_height,fine,tVacuumGripper\WObj:=wobj0\PnPDataIN:=my_pnpdata;
+    ENDPROC
+ENDMODULE
