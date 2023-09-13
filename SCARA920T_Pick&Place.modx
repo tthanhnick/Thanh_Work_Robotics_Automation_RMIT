@@ -1,0 +1,70 @@
+MODULE Module1
+    CONST robtarget Above_Pick:=[[36.49,-457.35,159.3],[0,0.0685203,-0.99765,0],[-2,1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]]; ! Above Pick Position
+    CONST robtarget Above_Place:=[[78.89,396.19,135.26],[0,0.958385,0.28548,0],[0,1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]]; ! Above Place Position
+    CONST robtarget Pick_Pos:=[[95.83,-413.75,59.44],[0,0.708386,-0.705825,0],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]]; !z59.44                      ! Pick Position
+    CONST robtarget Place_Pos:=[[78.92,300.19,54.57],[0,0.0685203,-0.99765,0],[0,1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]]; !56.58   ! Place Position
+    CONST robtarget HomePos:=[[541.140714835,67.292951727,191.5],[0,0.991444861,0.130526192,0],[-1,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget acrosshome := [[198.92,420.19,185.24],[0,0.0705783,-0.997506,0],[0,3,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+
+    !PnP offset for Packing
+    CONST num Xincrement := 60;  !offset 50mm in the x axis
+    CONST num Yincrement := 60;  !offset 50mm in the y axis
+    CONST num DelayTime := 0.5; !delay time for picking object
+    VAR num Xpos := 0;
+    VAR num Ypos := 0;
+    
+    !CalcJointT to find the jointangles
+    VAR jointtarget AbovePick;
+    VAR jointtarget AbovePlace;
+    VAR jointtarget PickPos;
+    VAR jointtarget PlacePos;
+    
+    PROC main()
+        WorldAccLim \On := 34;
+        MoveJ HomePos,v2000,fine,tool0\WObj:=wobj0;
+        !loop to go throught each row 1 - 3, and go to another collumn after placing the object in row 3
+        !due to the placement of the robot, we have x = row, y = collumn
+        FOR y FROM 0 TO 1 DO !loop for collumn - y axis
+            FOR x FROM 0 TO 2 DO !loop for row - x axis
+                Path_10;
+                Xpos := xpos + Xincrement; !move 50mm - next row
+            ENDFOR
+            ypos := ypos + yincrement; !move 50mm - next collumn
+            xpos := 0; !reset to the first row
+        ENDFOR
+        ypos := 0; !reset the pnp pos
+        MoveJ acrosshome,v2000,fine,tool0\WObj:=wobj0;
+        MoveJ HomePos,v2000,z100,tool0\WObj:=wobj0;
+        
+        !CalcJointT to get the joint angle of each target's configuration
+        AbovePick := CalcJointT(Above_Pick, tool0 \WObj:=wobj0);
+        AbovePlace := CalcJointT(Above_Place, tool0 \WObj:=wobj0);
+        PickPos := CalcJointT(Pick_Pos, tool0 \WObj:=wobj0);
+        PlacePos := CalcJointT(Place_Pos, tool0 \WObj:=wobj0);
+    ENDPROC
+    
+    PROC Path_10()
+        !Packaging Example with 4-point trajectory 
+        !Velocity and Acceleration values is the result from the Trapezoidal Velocity Profile Optimization MATLAB file
+        !MovePnp
+        VAR num my_pnp_height := 175;
+        VAR pnpdata my_pnpdata;
+        VAR triggdata gripper1;
+        my_pnpdata.smooth_start := 115;
+        my_pnpdata.smooth_end := 115;
+       
+        WorldAccLim \On := 34;
+        MovePnP Offs (Above_Pick, xpos, ypos, -111), v2000, \PnPHeight:=my_pnp_height, fine, tool0\PnPDataIN:=my_pnpdata; !-50
+        Set IIO_do3; !Suck object
+        WaitTime DelayTime;
+
+        !TriggIO gripper1, 1 \DOp:=IIO_do3, 0;
+        MovePnP Offs (Place_Pos, xpos, ypos, 0), v2000, \PnPHeight:=my_pnp_height, fine, tool0\PnPDataIN:=my_pnpdata; !\PnPTrigg:=gripper1;
+        Reset IIO_do3; !Not Suck object
+        Set IIO_do4; !Blow object
+        MoveJ Offs (Place_Pos, xpos, ypos, 0),v2000,fine,tool0\WObj:=wobj0;
+        WaitTime DelayTime;
+                
+        Reset IIO_do4; !Not blow object
+    ENDPROC
+ENDMODULE
