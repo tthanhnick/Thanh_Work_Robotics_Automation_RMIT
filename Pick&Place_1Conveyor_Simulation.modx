@@ -1,0 +1,34 @@
+MODULE Module1
+    CONST robtarget AbovePick:=[[25.000018868,275,100],[0,1,0,0],[1,1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,0]];
+    CONST robtarget Pick:=[[24.998400555,274.998069946,65.000051796],[0,1,0,0],[1,1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,0]];
+    CONST robtarget AbovePlace:=[[162.449018868,575.058,106.737],[0,1,0,0],[0,0,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,0]];
+    CONST robtarget Place:=[[162.449018868,575.058,56.737],[0,1,0,0],[0,0,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,0]];
+    CONST robtarget Home:=[[45.294593953,372.391674678,99.000016987],[0,1,-0.000000028,0],[0,-2,0,-1],[9E+09,9E+09,9E+09,9E+09,9E+09,0]];
+
+    PROC Path_10()
+        Reset Vacumm;
+        MoveL AbovePick,v1000,fine,Vacumm_Gripper\WObj:=wobj_cnv1;
+        MoveL Pick,v1000,fine,Vacumm_Gripper\WObj:=wobj_cnv1;
+        WaitTime 1;
+        Set Vacumm;
+        PulseDO Pick_Pos;
+        MoveL AbovePick,v1000,fine,Vacumm_Gripper\WObj:=wobj_cnv1;
+        MoveL Place,v1000,fine,Vacumm_Gripper\WObj:=wobj_cnv1;
+        WaitTime 1;
+        Reset Vacumm;
+        MoveL AbovePlace,v1000,fine,Vacumm_Gripper\WObj:=wobj_cnv1;
+    ENDPROC
+
+    PROC main()
+        MoveJ Home,v1000,fine,Vacumm_Gripper\WObj:=wobj0;
+        ActUnit CNV1;
+        ConfL\Off;
+        WHILE TRUE DO
+            WaitWObj wobj_cnv1;
+            Path_10;
+            MoveJ Home,v1000,fine,Vacumm_Gripper\WObj:=wobj0;
+            DropWObj wobj_cnv1;
+        ENDWHILE
+
+    ENDPROC
+ENDMODULE
