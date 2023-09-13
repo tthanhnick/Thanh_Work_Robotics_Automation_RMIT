@@ -1,0 +1,9 @@
+// Offset
+    // Z-direction
+    $43 = 62 
+
+    // Y-direction
+    $42 = -10
+
+    // Z-direction
+    $41 = -27
