@@ -1,4 +1,4 @@
-# Thanh_Work_Automation_Robotics
+# Thanh_Work_Automation_Robotics_RMIT
 First of all, this work is related to robotics and automation, especially in robotics and PLC programming.
 These files were mainly written in RAPID code (ABB robotic programming language).
 Other languages are included such as Ladder diagram, G-code and Python.
